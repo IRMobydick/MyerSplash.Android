@@ -7,13 +7,13 @@ import android.graphics.*
 import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
-import android.support.annotation.WorkerThread
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
 import android.widget.RelativeLayout
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.annotation.WorkerThread
 import butterknife.BindView
 import butterknife.ButterKnife
 import butterknife.OnClick

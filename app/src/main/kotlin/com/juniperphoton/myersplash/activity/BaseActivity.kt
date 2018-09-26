@@ -3,10 +3,10 @@ package com.juniperphoton.myersplash.activity
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.appcompat.app.AppCompatActivity
 import com.juniperphoton.myersplash.R
 import com.juniperphoton.myersplash.extension.getNavigationBarSize
 import com.juniperphoton.myersplash.extension.getStatusBarHeight

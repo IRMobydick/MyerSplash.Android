@@ -12,12 +12,6 @@ import android.graphics.Color
 import android.graphics.RectF
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
-import android.support.customtabs.CustomTabsIntent
-import android.support.design.widget.FloatingActionButton
-import android.support.v4.content.ContextCompat
-import android.support.v4.content.FileProvider
-import android.support.v4.view.animation.FastOutSlowInInterpolator
-import android.support.v7.graphics.Palette
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -27,10 +21,15 @@ import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import butterknife.BindView
 import butterknife.ButterKnife
 import butterknife.OnClick
 import com.facebook.drawee.view.SimpleDraweeView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.juniperphoton.flipperlayout.FlipperLayout
 import com.juniperphoton.myersplash.R
 import com.juniperphoton.myersplash.RealmCache
@@ -454,7 +453,7 @@ class ImageDetailView(context: Context, attrs: AttributeSet) : FrameLayout(conte
                 .subscribeOn(Schedulers.io())
                 .map {
                     val bm = BitmapFactory.decodeFile(file.absolutePath)
-                    Palette.from(bm).generate().darkVibrantSwatch?.rgb
+                    androidx.palette.graphics.Palette.from(bm).generate().darkVibrantSwatch?.rgb
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(object : SimpleObserver<Int>() {
