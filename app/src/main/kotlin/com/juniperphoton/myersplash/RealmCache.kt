@@ -6,6 +6,7 @@ import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.RealmMigration
 
+@Deprecated("")
 object RealmCache {
     private const val SCHEMA_VERSION = 3L
     private var configuration: RealmConfiguration? = null
@@ -21,6 +22,7 @@ object RealmCache {
     fun getInstance() = Realm.getInstance(configuration)!!
 }
 
+@Deprecated("")
 @Suppress("UNUSED_CHANGED_VALUE")
 class CacheMigration : RealmMigration {
     override fun migrate(realm: DynamicRealm?, oldVersion: Long, newVersion: Long) {

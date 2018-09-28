@@ -5,6 +5,7 @@ import io.realm.RealmObject
 import io.realm.annotations.Ignore
 import io.realm.annotations.PrimaryKey
 
+@Deprecated("")
 open class DownloadItem() : RealmObject() {
     companion object {
         const val DOWNLOAD_STATUS_INVALID = -1

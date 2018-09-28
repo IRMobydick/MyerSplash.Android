@@ -6,13 +6,12 @@ import android.content.Intent
 import androidx.appcompat.app.AlertDialog
 import com.juniperphoton.myersplash.App
 import com.juniperphoton.myersplash.R
-import com.juniperphoton.myersplash.RealmCache
 import com.juniperphoton.myersplash.event.DownloadStartedEvent
 import com.juniperphoton.myersplash.extension.usingWifi
-import com.juniperphoton.myersplash.model.DownloadItem
 import com.juniperphoton.myersplash.model.UnsplashImage
+import com.juniperphoton.myersplash.room.AppDatabase
+import com.juniperphoton.myersplash.room.DownloadItem
 import com.juniperphoton.myersplash.service.DownloadService
-import io.realm.Sort
 import okhttp3.ResponseBody
 import org.greenrobot.eventbus.EventBus
 import java.io.*
@@ -120,7 +119,7 @@ object DownloadUtil {
             return
         }
         if (LocalSettingHelper.getBoolean(context,
-                context.getString(R.string.preference_key_download_via_metered_network), false)) {
+                        context.getString(R.string.preference_key_download_via_metered_network), false)) {
             doDownload(context, image)
             return
         }
@@ -143,13 +142,10 @@ object DownloadUtil {
      * Get the realm object of [DownloadItem] given its [id].
      */
     fun getDownloadItemById(id: String?): DownloadItem? {
-        val realm = RealmCache.getInstance()
-        realm.beginTransaction()
-        val item = realm.where(DownloadItem::class.java)
-                .equalTo(DownloadItem.ID_KEY, id)
-                .findFirst()
-        realm.commitTransaction()
-        return item
+        id ?: return null
+
+        return AppDatabase.instance.downloadItemDao()
+                .getDownloadItem(id)
     }
 
     private fun doDownload(context: Context, image: UnsplashImage) {
@@ -164,20 +160,14 @@ object DownloadUtil {
     }
 
     private fun persistDownloadItem(context: Context, image: UnsplashImage) {
-        val downloadItems = RealmCache.getInstance().where(DownloadItem::class.java)
-                .findAllSorted(DownloadItem.POSITION_KEY, Sort.DESCENDING)
-        var position = 0
-        if (downloadItems.size > 0) {
-            position = downloadItems[0].position + 1
-        }
-
         ToastService.sendShortToast(context.getString(R.string.downloading_in_background))
 
         val item = DownloadItem(image.id!!, image.listUrl!!, image.downloadUrl!!,
                 image.fileNameForDownload)
-        item.position = position
+        item.position = 0
         item.color = image.themeColor
-        RealmCache.getInstance().executeTransaction { realm -> realm.copyToRealmOrUpdate(item) }
+
+        AppDatabase.instance.downloadItemDao().insert(item)
     }
 
     private fun startDownloadService(context: Context, name: String, url: String, previewUrl: String? = null) {

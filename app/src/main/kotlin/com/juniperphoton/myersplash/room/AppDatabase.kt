@@ -1,0 +1,16 @@
+package com.juniperphoton.myersplash.room
+
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import com.juniperphoton.myersplash.App
+
+@Database(entities = [DownloadItem::class], version = 1)
+abstract class AppDatabase : RoomDatabase() {
+    companion object {
+        val instance = Room.databaseBuilder(App.instance,
+                AppDatabase::class.java, "AppDatabase").build()
+    }
+
+    abstract fun downloadItemDao(): DownloadItemDao
+}

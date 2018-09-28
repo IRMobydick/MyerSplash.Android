@@ -15,7 +15,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder
 import com.juniperphoton.flipperlayout.FlipperLayout
 import com.juniperphoton.myersplash.App
 import com.juniperphoton.myersplash.R
-import com.juniperphoton.myersplash.model.DownloadItem
+import com.juniperphoton.myersplash.room.DownloadItem
 import com.juniperphoton.myersplash.service.DownloadService
 import com.juniperphoton.myersplash.utils.DownloadItemTransactionUtil
 import com.juniperphoton.myersplash.utils.Params

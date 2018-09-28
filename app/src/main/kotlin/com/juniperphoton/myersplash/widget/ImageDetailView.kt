@@ -32,19 +32,19 @@ import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.juniperphoton.flipperlayout.FlipperLayout
 import com.juniperphoton.myersplash.R
-import com.juniperphoton.myersplash.RealmCache
 import com.juniperphoton.myersplash.activity.EditActivity
 import com.juniperphoton.myersplash.event.DownloadStartedEvent
 import com.juniperphoton.myersplash.extension.copyFile
 import com.juniperphoton.myersplash.extension.isLightColor
-import com.juniperphoton.myersplash.model.DownloadItem
 import com.juniperphoton.myersplash.model.UnsplashImage
+import com.juniperphoton.myersplash.room.AppDatabase
+import com.juniperphoton.myersplash.room.DownloadItem
 import com.juniperphoton.myersplash.utils.*
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import io.realm.RealmChangeListener
+import io.reactivex.subscribers.DisposableSubscriber
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -148,15 +148,8 @@ class ImageDetailView(context: Context, attrs: AttributeSet) : FrameLayout(conte
     @BindView(R.id.detail_set_as_fab)
     lateinit var setAsFAB: FloatingActionButton
 
+    private var queryDisposable: Disposable? = null
     private var associatedDownloadItem: DownloadItem? = null
-
-    private val realmChangeListener = RealmChangeListener<DownloadItem> { element ->
-        when (element.status) {
-            DownloadItem.DOWNLOAD_STATUS_DOWNLOADING -> progressView.progress = element.progress
-            DownloadItem.DOWNLOAD_STATUS_FAILED -> downloadFlipperLayout.next(DOWNLOAD_FLIPPER_LAYOUT_STATUS_DOWNLOAD)
-            DownloadItem.DOWNLOAD_STATUS_OK -> downloadFlipperLayout.next(DOWNLOAD_FLIPPER_LAYOUT_STATUS_DOWNLOAD_OK)
-        }
-    }
 
     private val shareButtonHideOffset: Int
         get() = resources.getDimensionPixelOffset(R.dimen.share_btn_margin_right_hide)
@@ -289,14 +282,34 @@ class ImageDetailView(context: Context, attrs: AttributeSet) : FrameLayout(conte
 
     private fun associateWithDownloadItem(item: DownloadItem?) {
         if (item == null) {
-            RealmCache.getInstance().executeTransaction {
-                associatedDownloadItem = it.where(DownloadItem::class.java)
-                        .equalTo(DownloadItem.ID_KEY, clickedImage!!.id).findFirst()
-            }
-        }
+            queryDisposable = AppDatabase.instance.downloadItemDao()
+                    .getDownloadItemRx(clickedImage!!.id)
+                    .subscribeOn(Schedulers.io())
+                    .distinctUntilChanged()
+                    .subscribeWith(object : DisposableSubscriber<DownloadItem>() {
+                        override fun onComplete() {
+                        }
 
-        associatedDownloadItem?.removeAllChangeListeners()
-        associatedDownloadItem?.addChangeListener(realmChangeListener)
+                        override fun onNext(t: DownloadItem?) {
+                            t ?: return
+
+                            associatedDownloadItem = t
+
+                            when (t.status) {
+                                DownloadItem.DOWNLOAD_STATUS_DOWNLOADING -> progressView.progress = t.progress
+                                DownloadItem.DOWNLOAD_STATUS_FAILED -> downloadFlipperLayout.next(DOWNLOAD_FLIPPER_LAYOUT_STATUS_DOWNLOAD)
+                                DownloadItem.DOWNLOAD_STATUS_OK -> downloadFlipperLayout.next(DOWNLOAD_FLIPPER_LAYOUT_STATUS_DOWNLOAD_OK)
+                                else -> {
+                                    Pasteur.warn(TAG, "download item is null")
+                                }
+                            }
+                        }
+
+                        override fun onError(t: Throwable?) {
+                            t?.printStackTrace()
+                        }
+                    })
+        }
     }
 
     private fun toggleHeroViewAnimation(startY: Float, endY: Float, show: Boolean) {
@@ -584,9 +597,10 @@ class ImageDetailView(context: Context, attrs: AttributeSet) : FrameLayout(conte
 
     @OnClick(R.id.detail_cancel_download_fab)
     fun onClickCancelDownload() {
-        if (clickedImage == null) {
+        if (clickedImage == null || associatedDownloadItem == null) {
             return
         }
+
         downloadFlipperLayout.next(DOWNLOAD_FLIPPER_LAYOUT_STATUS_DOWNLOAD)
 
         DownloadItemTransactionUtil.updateStatus(associatedDownloadItem!!, DownloadItem.DOWNLOAD_STATUS_FAILED)
@@ -678,10 +692,8 @@ class ImageDetailView(context: Context, attrs: AttributeSet) : FrameLayout(conte
      */
     fun tryHide(): Boolean {
         disposable?.dispose()
-        if (associatedDownloadItem?.isValid == true) {
-            associatedDownloadItem!!.removeChangeListener(realmChangeListener)
-            associatedDownloadItem = null
-        }
+        queryDisposable?.dispose()
+
         if (detailRootScrollView.visibility == View.VISIBLE) {
             hideDetailPanel()
             return true

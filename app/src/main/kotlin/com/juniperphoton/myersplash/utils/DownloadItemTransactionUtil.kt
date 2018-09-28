@@ -1,7 +1,7 @@
 package com.juniperphoton.myersplash.utils
 
-import com.juniperphoton.myersplash.RealmCache
-import com.juniperphoton.myersplash.model.DownloadItem
+import com.juniperphoton.myersplash.room.AppDatabase
+import com.juniperphoton.myersplash.room.DownloadItem
 
 /**
  * Helper class for updating download item status in realm.
@@ -12,11 +12,8 @@ object DownloadItemTransactionUtil {
      * Delete a managed download [item].
      */
     fun delete(item: DownloadItem) {
-        RealmCache.getInstance().executeTransaction { realm ->
-            val managedItem = realm.where(DownloadItem::class.java)
-                    .equalTo(DownloadItem.ID_KEY, item.id).findFirst()
-            managedItem?.deleteFromRealm()
-        }
+        AppDatabase.instance.downloadItemDao()
+                .delete(item)
     }
 
     /**
@@ -24,32 +21,23 @@ object DownloadItemTransactionUtil {
      * @param status see [DownloadItem.DownloadStatus].
      */
     fun updateStatus(item: DownloadItem, @DownloadItem.DownloadStatus status: Int) {
-        RealmCache.getInstance().executeTransaction { realm ->
-            val managedItem = realm.where(DownloadItem::class.java)
-                    .equalTo(DownloadItem.ID_KEY, item.id).findFirst()
-            if (managedItem != null) {
-                managedItem.status = status
-                if (status == DownloadItem.DOWNLOAD_STATUS_FAILED) {
-                    managedItem.progress = 0
-                }
-            }
-        }
+        updateStatus(item.id, status, if (status == DownloadItem.DOWNLOAD_STATUS_FAILED) {
+            0
+        } else {
+            item.progress
+        })
     }
 
     /**
      * Update download [status] of given a [id].
      * @param status see [DownloadItem.DownloadStatus].
      */
-    fun updateStatus(id: String, @DownloadItem.DownloadStatus status: Int) {
-        RealmCache.getInstance().executeTransaction { realm ->
-            val managedItem = realm.where(DownloadItem::class.java)
-                    .equalTo(DownloadItem.ID_KEY, id).findFirst()
-            if (managedItem != null) {
-                managedItem.status = status
-                if (status == DownloadItem.DOWNLOAD_STATUS_FAILED) {
-                    managedItem.progress = 0
-                }
-            }
-        }
+    fun updateStatus(id: String, @DownloadItem.DownloadStatus status: Int, progress: Int) {
+        AppDatabase.instance.downloadItemDao()
+                .update(id, status, if (status == DownloadItem.DOWNLOAD_STATUS_FAILED) {
+                    0
+                } else {
+                    progress
+                })
     }
 }

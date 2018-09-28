@@ -12,9 +12,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.juniperphoton.myersplash.R
 import com.juniperphoton.myersplash.RealmCache
 import com.juniperphoton.myersplash.adapter.DownloadsListAdapter
-import com.juniperphoton.myersplash.model.DownloadItem
-import com.juniperphoton.myersplash.utils.Pasteur
-import io.realm.RealmChangeListener
+import com.juniperphoton.myersplash.room.AppDatabase
+import com.juniperphoton.myersplash.room.DownloadItem
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import io.realm.Sort
 import java.util.*
 
@@ -36,25 +37,12 @@ class ManageDownloadActivity : BaseActivity() {
 
     private var adapter: DownloadsListAdapter? = null
 
-    private var itemStatusChangedListener = RealmChangeListener<DownloadItem> { item ->
-        Pasteur.d(TAG, "onChange")
-        if (item.isValid) {
-            adapter?.updateItem(item)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_manage_download)
         ButterKnife.bind(this)
 
         initViews()
-    }
-
-    override fun onDestroy() {
-        RealmCache.getInstance().removeAllChangeListeners()
-        RealmCache.getInstance().close()
-        super.onDestroy()
     }
 
     @OnClick(R.id.downloads_more_fab)
@@ -75,16 +63,8 @@ class ManageDownloadActivity : BaseActivity() {
     }
 
     private fun deleteFromRealm(status: Int) {
-        RealmCache.getInstance().executeTransaction {
-            it.where(DownloadItem::class.java)
-                    .equalTo(DownloadItem.STATUS_KEY, status)
-                    .findAll()
-                    .forEach {
-                        it.removeAllChangeListeners()
-                        it.deleteFromRealm()
-                    }
-            initViews()
-        }
+        AppDatabase.instance.downloadItemDao().deleteAll(status)
+        initViews()
     }
 
     private fun updateNoItemVisibility() {
@@ -98,6 +78,13 @@ class ManageDownloadActivity : BaseActivity() {
     private fun initViews() {
         val downloadItems = ArrayList<DownloadItem>()
 
+        AppDatabase.instance.downloadItemDao().getAllDownloadItemsRx()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    adapter.refreshItems(it)
+                }
+
         RealmCache.getInstance()
                 .where(DownloadItem::class.java)
                 .findAllSorted(DownloadItem.POSITION_KEY, Sort.DESCENDING)
@@ -108,6 +95,9 @@ class ManageDownloadActivity : BaseActivity() {
         downloadItems.forEach {
             it.addChangeListener(itemStatusChangedListener)
         }
+
+        val items = AppDatabase.instance.downloadItemDao()
+                .getAllDownloadItems()
 
         if (adapter == null) {
             adapter = DownloadsListAdapter(this)

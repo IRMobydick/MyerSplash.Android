@@ -15,6 +15,5 @@ class App : Application() {
         instance = this
         Pasteur.init(BuildConfig.DEBUG)
         Fresco.initialize(this)
-        RealmCache.init(this)
     }
 }
