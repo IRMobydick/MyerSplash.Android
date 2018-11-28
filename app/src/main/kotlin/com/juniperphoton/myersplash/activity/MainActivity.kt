@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.View
 import android.view.ViewAnimationUtils
-import android.view.ViewGroup
 import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
@@ -256,12 +255,6 @@ class MainActivity : BaseActivity() {
         })
 
         tagView.setOnClickListener { EventBus.getDefault().post(ScrollToTopEvent(idMaps[pivotTitleBar.selectedItem]!!, false)) }
-    }
-
-    override fun onApplySystemInsets(top: Int, bottom: Int) {
-        val params = searchFab.layoutParams as ViewGroup.MarginLayoutParams
-        params.bottomMargin += bottom
-        searchFab.layoutParams = params
     }
 
     private fun handleShortcutsAction() {

@@ -3,7 +3,6 @@ package com.juniperphoton.myersplash.activity
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.View
-import android.view.ViewGroup
 import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
@@ -130,11 +129,5 @@ class ManageDownloadActivity : BaseActivity() {
         (downloadsList.itemAnimator as androidx.recyclerview.widget.SimpleItemAnimator).supportsChangeAnimations = false
 
         updateNoItemVisibility()
-    }
-
-    override fun onApplySystemInsets(top: Int, bottom: Int) {
-        val params = moreFab.layoutParams as ViewGroup.MarginLayoutParams
-        params.bottomMargin += bottom
-        moreFab.layoutParams = params
     }
 }

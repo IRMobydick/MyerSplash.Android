@@ -184,10 +184,6 @@ class EditActivity : BaseActivity() {
                 })
     }
 
-    override fun onApplySystemInsets(top: Int, bottom: Int) {
-        bottomBar.setPadding(0, 0, 0, bottomBar.paddingBottom + bottom)
-    }
-
     @SuppressLint("WrongThread")
     @WorkerThread
     private fun composeMaskInternal(): File? {
